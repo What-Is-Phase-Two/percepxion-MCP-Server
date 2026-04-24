@@ -64,6 +64,11 @@ def _url(path: str) -> str:
     return f"{API_BASE_URL}{path}"
 
 
+def _resolve_tenant(tenant_id: str | None) -> str | None:
+    """Return caller-supplied tenant_id, or the configured default."""
+    return tenant_id or DEFAULT_TENANT_ID
+
+
 def _ok(data: Any, status_code: int | None = None) -> dict[str, Any]:
     result = {"ok": True, "data": data}
     if status_code is not None:
@@ -181,8 +186,8 @@ def get_device_list(
         "sort": sort,
         "order": order,
     }
-    if tenant_id:
-        payload["tenant_id"] = tenant_id
+    if (t := _resolve_tenant(tenant_id)):
+        payload["tenant_id"] = t
     return _api_post("/v3/device/search", json_body=payload)
 
 
@@ -197,8 +202,8 @@ def get_device_details(device_id: str | None = None, serial_num: str | None = No
         payload["device_id"] = [device_id]
     if serial_num:
         payload["serial_num"] = [serial_num]
-    if tenant_id:
-        payload["tenant_id"] = tenant_id
+    if (t := _resolve_tenant(tenant_id)):
+        payload["tenant_id"] = t
 
     return _api_post("/v3/device/get", json_body=payload)
 
@@ -273,8 +278,8 @@ def import_and_assign_devices(devices: list[dict[str, Any]], tenant_id: str | No
         }
         if device.get("device_description"):
             payload["device_description"] = device["device_description"]
-        if tenant_id:
-            payload["tenant_id"] = tenant_id
+        if (t := _resolve_tenant(tenant_id)):
+            payload["tenant_id"] = t
 
         resp = _api_post("/v3/device/assign", json_body=payload)
         results.append({"device_id": device["device_id"], **resp})
@@ -288,8 +293,8 @@ def unassign_devices(device_ids: list[str], tenant_id: str | None = None) -> dic
     if not device_ids:
         return _err("device_ids list cannot be empty.")
     payload: dict[str, Any] = {"device_id": device_ids}
-    if tenant_id:
-        payload["tenant_id"] = tenant_id
+    if (t := _resolve_tenant(tenant_id)):
+        payload["tenant_id"] = t
     return _api_post("/v3/device/unassign", json_body=payload)
 
 
@@ -334,8 +339,8 @@ def create_smart_group(
         payload["query_string"] = query
     if device_ids:
         payload["device_id"] = device_ids
-    if tenant_id:
-        payload["tenant_id"] = tenant_id
+    if (t := _resolve_tenant(tenant_id)):
+        payload["tenant_id"] = t
 
     return _api_post("/v3/device/smartgroup/create", json_body=payload)
 
@@ -420,8 +425,8 @@ def update_device_config(
         "device_id": [device_id],
         "items": items,
     }
-    if tenant_id:
-        save_payload["tenant_id"] = tenant_id
+    if (t := _resolve_tenant(tenant_id)):
+        save_payload["tenant_id"] = t
 
     save_resp = _api_post("/v1/telemetry/config/save", json_body=save_payload)
     if not save_resp["ok"] or not apply_now:
@@ -437,8 +442,8 @@ def update_device_config(
         "device_id": [device_id],
         "enable": True,
     }
-    if tenant_id:
-        job_payload["tenant_id"] = tenant_id
+    if (t := _resolve_tenant(tenant_id)):
+        job_payload["tenant_id"] = t
 
     job_resp = _api_post("/v1/job/jobgroup/create", json_body=job_payload)
     return _ok({"save": save_resp["data"], "apply_job": job_resp})
@@ -453,8 +458,8 @@ def _resolve_template_id(template_name: str, source_device_id: str, tenant_id: s
         "sort": "name",
         "order": "desc",
     }
-    if tenant_id:
-        payload["tenant_id"] = tenant_id
+    if (t := _resolve_tenant(tenant_id)):
+        payload["tenant_id"] = t
 
     resp = _api_post("/v1/telemetry/template/search", json_body=payload)
     if not resp["ok"]:
@@ -487,8 +492,8 @@ def clone_device_config(
         "device_id": source_device_id,
         "selected_config_group": record_names,
     }
-    if tenant_id:
-        template_payload["tenant_id"] = tenant_id
+    if (t := _resolve_tenant(tenant_id)):
+        template_payload["tenant_id"] = t
 
     create_resp = _api_post("/v1/telemetry/template/create", json_body=template_payload)
     if not create_resp["ok"]:
@@ -510,8 +515,8 @@ def clone_device_config(
         "device_id": [target_device_id],
         "enable": True,
     }
-    if tenant_id:
-        job_payload["tenant_id"] = tenant_id
+    if (t := _resolve_tenant(tenant_id)):
+        job_payload["tenant_id"] = t
 
     apply_resp = _api_post("/v1/job/jobgroup/create", json_body=job_payload)
     return _ok(
@@ -583,8 +588,8 @@ def request_device_syslog_upload(
         "enable": True,
         "log_request": log_request,
     }
-    if tenant_id:
-        payload["tenant_id"] = tenant_id
+    if (t := _resolve_tenant(tenant_id)):
+        payload["tenant_id"] = t
     return _api_post("/v1/job/jobgroup/create", json_body=payload)
 
 
@@ -603,8 +608,8 @@ def get_device_syslogs(device_id: str, limit: int = 10) -> dict[str, Any]:
 def get_security_telemetry(device_id: str, selected: bool = True, tenant_id: str | None = None) -> dict[str, Any]:
     """Retrieve telemetry statistics useful for security analysis."""
     payload: dict[str, Any] = {"device_id": device_id, "selected": selected}
-    if tenant_id:
-        payload["tenant_id"] = tenant_id
+    if (t := _resolve_tenant(tenant_id)):
+        payload["tenant_id"] = t
     return _api_post("/v1/telemetry/stat/view", json_body=payload)
 
 
@@ -635,8 +640,8 @@ def investigate_audit_logs(
     }
     if usernames:
         payload["username"] = usernames
-    if tenant_id:
-        payload["tenant_id"] = tenant_id
+    if (t := _resolve_tenant(tenant_id)):
+        payload["tenant_id"] = t
     return _api_post("/v1/audit/search", json_body=payload)
 
 
@@ -657,8 +662,8 @@ def investigate_user_audit_logs(
         "sort": sort,
         "order": order,
     }
-    if tenant_id:
-        payload["tenant_id"] = tenant_id
+    if (t := _resolve_tenant(tenant_id)):
+        payload["tenant_id"] = t
     return _api_post("/v1/audit/user/search", json_body=payload)
 
 
@@ -701,8 +706,8 @@ def update_firmware_by_smart_group(
         "enable": enable,
         "smart_group_id": smart_group_ids,
     }
-    if tenant_id:
-        data_payload["tenant_id"] = tenant_id
+    if (t := _resolve_tenant(tenant_id)):
+        data_payload["tenant_id"] = t
 
     try:
         with firmware_path.open("rb") as firmware_file:
