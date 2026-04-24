@@ -27,6 +27,8 @@ PASSWORD = os.getenv("PERCEPXION_PASSWORD")
 REQUEST_TIMEOUT_SECONDS = int(os.getenv("PERCEPXION_REQUEST_TIMEOUT", "45"))
 # If set, firmware uploads are restricted to files within this directory.
 FIRMWARE_DIR = os.getenv("PERCEPXION_FIRMWARE_DIR")
+# If set, used as fallback tenant_id for CLI job commands when none is supplied by the caller.
+DEFAULT_TENANT_ID = os.getenv("PERCEPXION_DEFAULT_TENANT_ID")
 
 
 class PercepxionSession:
@@ -359,7 +361,7 @@ def automate_smart_group(
 
 
 @mcp.tool()
-def send_direct_cli_command(device_id: str, command: str, description: str = "Triggered via MCP") -> dict[str, Any]:
+def send_direct_cli_command(device_id: str, command: str, description: str = "Triggered via MCP", tenant_id: str | None = None) -> dict[str, Any]:
     """
     Send a CLI command to one device via a Percepxion job group.
 
@@ -370,8 +372,11 @@ def send_direct_cli_command(device_id: str, command: str, description: str = "Tr
         device_id: Percepxion device ID (from get_device_list).
         command: CLI command string to execute on the device.
         description: Human-readable label stored in the job group record.
+        tenant_id: Tenant/org scope required for tenant-owned devices. Falls back
+                   to PERCEPXION_DEFAULT_TENANT_ID env var if not supplied.
     """
     logger.info("CLI command dispatched — device_id=%s command=%r", device_id, command)
+    effective_tenant_id = tenant_id or DEFAULT_TENANT_ID
     payload = {
         "name": f"CLI_{device_id[:12]}_{int(time.time())}",
         "description": description,
@@ -382,6 +387,8 @@ def send_direct_cli_command(device_id: str, command: str, description: str = "Tr
         "operation": command,
         "device_id": [device_id],
     }
+    if effective_tenant_id:
+        payload["tenant_id"] = effective_tenant_id
     return _api_post("/v1/job/jobgroup/create", json_body=payload)
 
 
@@ -721,6 +728,7 @@ def search_job_groups(
     tenant_id: str | None = None,
 ) -> dict[str, Any]:
     """Search job groups to monitor asynchronous operation progress."""
+    effective_tenant_id = tenant_id or DEFAULT_TENANT_ID
     payload: dict[str, Any] = {
         "search_string": search_string,
         "type": job_type,
@@ -729,8 +737,8 @@ def search_job_groups(
     }
     if subtype:
         payload["subtype"] = subtype
-    if tenant_id:
-        payload["tenant_id"] = tenant_id
+    if effective_tenant_id:
+        payload["tenant_id"] = effective_tenant_id
     return _api_post("/v1/job/jobgroup/search", json_body=payload)
 
 
