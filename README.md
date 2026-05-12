@@ -1,10 +1,13 @@
+> **This repository has been archived.** The project has moved to the official Lantronix organization:
+> **[github.com/Lantronix/percepxion-mcp-server](https://github.com/Lantronix/percepxion-mcp-server)**
+
 # Percepxion MCP Server
 
 A Python [FastMCP](https://github.com/jlowin/fastmcp) server that exposes the [Percepxion](https://gopercepxion.ai) REST API as MCP tools. Connect it to Claude Desktop, Claude Code, or any MCP-compatible client to manage out-of-band infrastructure through natural language.
 
 ## What is Percepxion?
 
-Percepxion is a SaaS platform for out-of-band (OOB) network device management. It connects to console servers, serial port aggregators, and remote access devices to provide fleet-wide visibility, configuration management, firmware updates, CLI access, and compliance reporting — independent of the primary network path.
+Percepxion is a SaaS platform for out-of-band (OOB) network device management. It connects to console servers, serial port aggregators, and remote access devices to provide fleet-wide visibility, configuration management, firmware updates, CLI access, and compliance reporting, independent of the primary network path.
 
 This MCP server gives AI assistants direct access to Percepxion's management capabilities.
 
@@ -25,11 +28,11 @@ This MCP server gives AI assistants direct access to Percepxion's management cap
 
 ## How it works
 
-The server runs locally and communicates with the Percepxion API over HTTPS. Authentication uses username/password — the server exchanges these for session tokens and holds them in memory for the lifetime of the process.
+The server runs locally and communicates with the Percepxion API over HTTPS. Authentication uses username/password, the server exchanges these for session tokens and holds them in memory for the lifetime of the process.
 
 Many Percepxion operations are asynchronous. Tools that trigger device actions (CLI commands, config pushes, firmware updates, syslog requests) create a Percepxion job group and return the job record. Use `search_job_groups` to poll job status and retrieve results.
 
-**Response envelope — all tools return this structure:**
+**Response envelope, all tools return this structure:**
 
 ```json
 { "ok": true, "data": { ... }, "status_code": 200 }
@@ -63,7 +66,7 @@ pip install -r requirements.txt
 pip install -e .
 
 cp .env.example .env
-# Edit .env — set PERCEPXION_USERNAME, PERCEPXION_PASSWORD, PERCEPXION_API_URL
+# Edit .env, set PERCEPXION_USERNAME, PERCEPXION_PASSWORD, PERCEPXION_API_URL
 ```
 
 Test the server starts:
@@ -87,11 +90,11 @@ docker run --rm -it --env-file .env percepxion-mcp-server
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `PERCEPXION_USERNAME` | Yes | — | Percepxion login username |
-| `PERCEPXION_PASSWORD` | Yes | — | Percepxion login password |
+| `PERCEPXION_USERNAME` | Yes |, | Percepxion login username |
+| `PERCEPXION_PASSWORD` | Yes |, | Percepxion login password |
 | `PERCEPXION_API_URL` | Yes | `https://api.gopercepxion.ai/api` | Percepxion API base URL |
 | `PERCEPXION_REQUEST_TIMEOUT` | No | `45` | HTTP timeout in seconds. Raise for large log downloads or slow links. |
-| `PERCEPXION_FIRMWARE_DIR` | No | — | If set, firmware uploads are restricted to files in this directory. Recommended for shared or automated deployments. |
+| `PERCEPXION_FIRMWARE_DIR` | No |, | If set, firmware uploads are restricted to files in this directory. Recommended for shared or automated deployments. |
 
 Keep `.env` out of version control. The repo includes `.env.example` as a starting point.
 
@@ -187,14 +190,14 @@ Full reference in [`docs/tools.md`](docs/tools.md). Quick summary below.
 
 | Tool | Description | Async? |
 |---|---|---|
-| `send_direct_cli_command` | Send a CLI command to one device. Commands are audit-logged to stderr. | Yes — use `search_job_groups` |
+| `send_direct_cli_command` | Send a CLI command to one device. Commands are audit-logged to stderr. | Yes, use `search_job_groups` |
 
 ### Device configuration
 
 | Tool | Description | Async? |
 |---|---|---|
 | `update_device_config` | Save config properties and optionally apply them immediately. | Yes if `apply_now=True` |
-| `clone_device_config` | Copy config groups from a source device to a target device via a template. | Yes — use `search_job_groups` |
+| `clone_device_config` | Copy config groups from a source device to a target device via a template. | Yes, use `search_job_groups` |
 
 ### Firmware management
 
@@ -202,13 +205,13 @@ Full reference in [`docs/tools.md`](docs/tools.md). Quick summary below.
 |---|---|---|
 | `get_device_firmware_status` | Get firmware version and state for one device. | No |
 | `firmware_compliance_report` | Compare fleet firmware against an expected version. Returns compliant, non-compliant, and unknown device lists. | No |
-| `update_firmware_by_smart_group` | Upload a firmware file and apply it to devices in one or more Smart Groups. Firmware file must be on the server host. | Yes — use `search_job_groups` |
+| `update_firmware_by_smart_group` | Upload a firmware file and apply it to devices in one or more Smart Groups. Firmware file must be on the server host. | Yes, use `search_job_groups` |
 
 ### Logging
 
 | Tool | Description | Async? |
 |---|---|---|
-| `request_device_syslog_upload` | Trigger devices to upload syslogs to Percepxion storage. | Yes — use `search_job_groups` |
+| `request_device_syslog_upload` | Trigger devices to upload syslogs to Percepxion storage. | Yes, use `search_job_groups` |
 | `get_device_syslogs` | Query syslog content already uploaded to Percepxion. | No |
 | `query_device_access_log` | Paginated query of device access log entries. | No |
 | `download_device_access_log` | Download complete access log content for one device. | No |
@@ -293,9 +296,9 @@ This server executes operations on production network infrastructure. Treat it a
 
 ## Developer docs
 
-- [`docs/tools.md`](docs/tools.md) — full tool reference with API endpoint mapping
-- [`docs/adding-new-tools.md`](docs/adding-new-tools.md) — conventions for adding tools to this server
-- [`docs/claude-example.prompt`](docs/claude-example.prompt) — starter system prompt for Claude Desktop sessions
+- [`docs/tools.md`](docs/tools.md), full tool reference with API endpoint mapping
+- [`docs/adding-new-tools.md`](docs/adding-new-tools.md), conventions for adding tools to this server
+- [`docs/claude-example.prompt`](docs/claude-example.prompt), starter system prompt for Claude Desktop sessions
 
 ---
 
